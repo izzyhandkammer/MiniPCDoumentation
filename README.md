@@ -16,3 +16,6 @@ The core of the lab is a virtual Palo Alto Networks firewall (PA-VM), deployed a
 
 # To Do:
 * verify the IP address of my management interface and change it within my setup documentation.
+* update table of contents and order
+* add visual intrigue to my 440 setup page
+* cross check my osfp info in routing
