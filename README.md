@@ -17,7 +17,7 @@ These are the required milestones I set out to achieve with this home lab:
 | 1 | [PA-440 Setup](PA440_Setup.md)                                    | Complete | Initial firewall setup, MGT access, and base system configuration.                       |
 | 2 | [Network Segmentation and Zone Deployment](Segmentation_Zones.md) | Complete    | Layer 3 interfaces, Security Zones, OSPF setup, NAT, and basic internet security policy. |
 | 3 | [VM Deployment](VM_Deplyment.md)                                  | Complete    | Documentation of client and server VM configuration and connectivity.                    |
-| 4 | App-ID and Content-ID Security                                    | Pending     | Refining the security policy using NGFW features.                                        |
+| 4 | [App-ID and Content-ID Security](AppId-ContentId.md)                                    | Complete     | Refining the security policy using NGFW features.                                        |
 | 5 | [Onboarding Panorama](Panorama_Onboarding.md)                     | In Progress | Deploying the Panorama VM and connecting the PA-440 for central management.              |
 | 6 | User-ID Implementation                                            | Pending     | Configuring identity-aware access control.                                               |
 
@@ -28,5 +28,4 @@ These are the required milestones I set out to achieve with this home lab:
 * `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
 * `Panorama_Onboarding.md`: Update this section with the relevant IP address, confirm the final disk allocation, and detail the steps beyond the license retrieval issue (manual licensing, template creation, device group)
-* Complete App-ID/Content-ID configuration and documentation.
 * Complete User-ID configuration and documentation.
