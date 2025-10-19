@@ -13,3 +13,6 @@ The core of the lab is a virtual Palo Alto Networks firewall (PA-VM), deployed a
 # Table of Contents
 1. [VM Deployment](VM_Deplyment.md)
 2. [Network Segmentation and Zone Deployment](Segmentation_Zones.md)
+
+# To Do:
+* verify the IP address of my management interface and change it within my setup documentation.
