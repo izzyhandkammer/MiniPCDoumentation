@@ -98,12 +98,14 @@ I created a Network Address Translation (NAT) policy to allow my internal hosts 
 |----------------|-------------|------------------|----------------------------------|-----------------------------------------------------------------------------------------------------|
 | Lab NAT        | DMZ, Trust  | untrust          | dynamic-ip-and-port, ethernet1/2 | Allows all internal hosts to reach the Internet by translating their private IPs to the PA-440's public/external IP.                                               |
 | Trust-to-Trust | Trust       | Trust            | none                             | Explicitly ensures that traffic staying within the Trust zone is not subject to NAT, which is the default behavior but is documented for clarity/troubleshooting. |
+
 Rationale: This configuration tells the firewall: "Any traffic leaving the $\text{Trust}$ or $\text{DMZ}$ zones and heading for the $\text{Untrust}$ zone should have its source IP address translated to the IP address of the firewall's external interface ($\text{ethernet1/2}$). This is standard Port Address Translation (PAT) for internet access."
 
 # 6. Configure Basic Internet Access Security Policy
 Since security rules are processed before NAT, I needed a temporary Security Policy to allow traffic out before I could implement my advanced App-ID policies.
 1. Navigate to Policies $\rightarrow$ Security
 2. Allow-Outbound-Internet Rule:
+   
 | Rule Name               | Action | Source Zone | Destination Zone | Application | Service             | Rationale                                                                                            |
 |-------------------------|--------|-------------|------------------|-------------|---------------------|-----------------------------------------------------------------------------------|
 | Allow-Outbound-Internet | Allow  | Trust, DMZ  | Untrust          | any         | application-default | Permits all internal hosts to access the Internet. (Will be refined with App-ID later).              |
