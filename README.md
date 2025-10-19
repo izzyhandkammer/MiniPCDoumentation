@@ -19,3 +19,4 @@ The core of the lab is a virtual Palo Alto Networks firewall (PA-VM), deployed a
 * update table of contents and order
 * add visual intrigue to my 440 setup page
 * cross check my osfp info in routing
+* update panorama onboarding section with relavent ip address, disc allocation (only need 4 cores), and steps beyond my problem
