@@ -28,4 +28,6 @@ These are the required milestones I set out to achieve with this home lab:
 * `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
 * `Panorama_Onboarding.md`: Update this section with the relevant IP address, confirm the final disk allocation, and detail the steps beyond the license retrieval issue (manual licensing, template creation, device group)
+* Edit lucidchart to include my switch and add it to relavent documentation area.
+* Double check App-Id Content-Id policy setup.
 * Complete User-ID configuration and documentation.
