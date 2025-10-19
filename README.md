@@ -1,22 +1,32 @@
 # Home Lab Deliverables: KSO Project Documentation
-This document details the design, configuration, and implementation of a personal home lab built on a Minisforum UM890 mini PC. The objective of this project was to fulfill the KSO Lab Deliverables by establishing a functional and secure network environment that demonstrates key networking and security concepts.
+This document serves as the guide, chronicling the design, configuration, and implementation of my personal security home lab. The entire environment is anchored on a Minisforum UM890 mini PC running a virtualization platform.
 
-The core of the lab is a virtual Palo Alto Networks firewall (PA-VM), deployed as a central security gateway. This firewall successfully segments a simulated corporate network into three distinct zones: a User Zone for client virtual machines (VMs), a DMZ Zone for a web server VM, and an Untrust Zone representing the internet.
+The core objective of this project was to successfully fulfill the KSO Lab Deliverables by establishing a functional, segmented, and secure network environment demonstrating key Next-Generation Firewall (NGFW) and routing concepts.
 
 ## Key Deliverables:
+These are the required milestones I set out to achieve with this home lab:
 * The deployment of multiple client and server virtual machines.
 * The establishment of L2/L3 connectivity with VLANs and OSPF dynamic routing.
 * The configuration of fundamental security policies utilizing Palo Alto Networks' App-ID and Content-ID features.
 * The onboarding of the PA-VM to a centralized Panorama management server.
 * The implementation of a security policy based on User-ID to demonstrate identity-aware access control.
 
-# Table of Contents
-1. [VM Deployment](VM_Deplyment.md)
-2. [Network Segmentation and Zone Deployment](Segmentation_Zones.md)
+# Ordered Table of Contents
+| # | Document                                                          | Status      | Coverage                                                                                 |
+|---|-------------------------------------------------------------------|-------------|------------------------------------------------------------------------------------------|
+| 1 | [PA-440 Setup](PA440_Setup.md)                                    | In Progress | Initial firewall setup, MGT access, and base system configuration.                       |
+| 2 | [Network Segmentation and Zone Deployment](Segmentation_Zones.md) | Complete    | Layer 3 interfaces, Security Zones, OSPF setup, NAT, and basic internet security policy. |
+| 3 | [VM Deployment](VM_Deplyment.md)                                  | Complete    | Documentation of client and server VM configuration and connectivity.                    |
+| 4 | App-ID and Content-ID Security                                    | Pending     | Refining the security policy using NGFW features.                                        |
+| 5 | [Onboarding Panorama](Panorama_Onboarding.md)                     | In Progress | Deploying the Panorama VM and connecting the PA-440 for central management.              |
+| 6 | User-ID Implementation                                            | Pending     | Configuring identity-aware access control.                                               |
 
 # To Do:
-* verify the IP address of my management interface and change it within my setup documentation.
-* update table of contents and order
-* add visual intrigue to my 440 setup page
-* cross check my osfp info in routing
-* update panorama onboarding section with relavent ip address, disc allocation (only need 4 cores), and steps beyond my problem
+
+## Documentation & Setup Refinements:
+* `PA-440_Setup.md`: Verify the IP address of my management interface (192.168.12.254) and ensure it's correct throughout the documentation.
+* `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
+## Pending Deliverables & Configuration:
+* `Panorama_Onboarding.md`: Update this section with the relevant IP address, confirm the final disk allocation, and detail the steps beyond the license retrieval issue (manual licensing, template creation, device group)
+* Complete App-ID/Content-ID configuration and documentation.
+* Complete User-ID configuration and documentation.
