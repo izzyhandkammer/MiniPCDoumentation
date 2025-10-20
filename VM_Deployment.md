@@ -30,7 +30,7 @@ This section details how I deployed the virtual machines (VMs) that make up the 
 | ---------- | -------                 |   ---- | ---  |                --- |        --- |
 | Ubuntu     |   Ubuntu                |   4 GB |    2 |              VMnet4|   10.1.1.5 |
 | XUbuntu    |               XUbuntu   |   4 GB |    2 |             VMnet4 |   10.1.1.4 |
-| OvaFile    |                         |  32 GB |   12 |             VMnet4 | 10.1.1.20 |
+| OvaFile    |                         |  32 GB |   12 |             VMnet4 | 10.1.1.19 |
 
 4. **Customizing My VMnets (Crucial for Segmentation)**
    To enforce the separation defined by the PA-440, I had to configure custom virtual switches (VMnets) in VMware Workstation. This is the physical (virtual) foundation of my L3 segmentation.
