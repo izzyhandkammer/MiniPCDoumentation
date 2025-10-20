@@ -61,4 +61,4 @@ I faced common challenges with VMware Workstation overriding my network settings
   * Fix: I explicitly checked and disabled the DHCP service for VMnet4 within the Virtual Network Editor.
 * IP Address Drift: I had issues where my static IP assignments would occasionally be lost or reset.
   * Fix: I ensured that in the VM's OS, the network connection method was set to Manual or Static, not just a generic "Automatic (DHCP)". I also used the Static Mappings feature on the PA-440 DHCP server to lock the IP addresses, adding redundancy to my static assignments.
-  * Firewall Connectivity Issues: When troubleshooting, the first step was always to verify that the VM's network adapter was correctly assigned to VMnet4 (Trust) and that the PA-440 interface (ethernet1/1) was also connected to VMnet4. Mismatched VMnets instantly break the segment.
+* Firewall Connectivity Issues: When troubleshooting, the first step was always to verify that the VM's network adapter was correctly assigned to VMnet4 (Trust) and that the PA-440 interface (ethernet1/1) was also connected to VMnet4. Mismatched VMnets instantly break the segment.
