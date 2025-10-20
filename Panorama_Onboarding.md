@@ -20,7 +20,7 @@ This process involves downloading the base image from the Palo Alto Networks Cus
 
 ### 1.3 Initial VM Power-On and CLI Access
 1. Once the import was complete, I started the VM
-2. After the virtual appliance booted, I accessed the console and logged in using the default credentials `[admin/admin]`
+2. After the virtual appliance booted, I accessed the console and logged in using the default credentials `[admin/admin]` (note: it's very common when Panorama boots up for the credentials not to take, just give it ~30 seconds and try again)
 
 ### 1.4 Configuring Management Access via CLI
 Just like with the PA-440, the first and most critical step is to configure a static IP and change the default password so I can access the Web GUI.
