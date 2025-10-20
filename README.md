@@ -16,7 +16,7 @@ These are the required milestones I set out to achieve with this home lab:
 |---|-------------------------------------------------------------------|-------------|------------------------------------------------------------------------------------------|
 | 1 | [PA-440 Setup](PA440_Setup.md)                                    | Complete | Initial firewall setup, MGT access, and base system configuration.                       |
 | 2 | [Network Segmentation and Zone Deployment](Segmentation_Zones.md) | Complete    | Layer 3 interfaces, Security Zones, OSPF setup, NAT, and basic internet security policy. |
-| 3 | [VM Deployment](VM_Deplyment.md)                                  | Complete    | Documentation of client and server VM configuration and connectivity.                    |
+| 3 | [VM Deployment](VM_Deployment.md)                                  | Complete    | Documentation of client and server VM configuration and connectivity.                    |
 | 4 | [App-ID and Content-ID Security](AppId-ContentId.md)                                    | Complete     | Refining the security policy using NGFW features.                                        |
 | 5 | [Onboarding Panorama](Panorama_Onboarding.md)                     | In Progress | Deploying the Panorama VM and connecting the PA-440 for central management.              |
 | 6 | User-ID Implementation                                            | Pending     | Configuring identity-aware access control.                                               |
