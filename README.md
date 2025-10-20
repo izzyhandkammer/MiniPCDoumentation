@@ -28,3 +28,4 @@ These are the required milestones I set out to achieve with this home lab:
 ## Pending Deliverables & Configuration:
 * `Panorama_Onboarding.md`: Update this section with the relevant IP address, confirm the final disk allocation, and detail the steps beyond the license retrieval issue (manual licensing, template creation, device group)
 * Complete User-ID configuration and documentation.
+* `LibreBoard_DMZ.md` finish config and create documentation
