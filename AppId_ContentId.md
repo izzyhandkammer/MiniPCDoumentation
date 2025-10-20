@@ -22,7 +22,7 @@ I replaced the temporary, broad "Allow-Outbound-Internet" rule with a refined po
 Content-ID is implemented by creating and applying Security Profiles to the policy rules. This enables the firewall to inspect the packet payload for malware, vulnerabilities, and risky web categories.
 
 ### Step 1: Creating the Security Profile Group
-1. Navigate to Objects $\rightarrow$ Security Profiles $\rightarrow$ Profile Groups
+1. Navigate to Objects $\rightarrow$ Security Profile Groups
 2. Create a new group named KSO-Default-Profiles
 3. Attatch the following default profiles to this group:
 
