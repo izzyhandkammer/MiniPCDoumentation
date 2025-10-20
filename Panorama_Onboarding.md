@@ -26,7 +26,7 @@ This process involves downloading the base image from the Palo Alto Networks Cus
 Just like with the PA-440, the first and most critical step is to configure a static IP and change the default password so I can access the Web GUI.
 | Action              | Planned Value |
 |---------------------|---------------|
-| Planned MGT IP      | 10.1.1.254/24 |
+| Planned MGT IP      | 10.1.1.20/24 |
 | Planned MGT Gateway | 10.1.1.1      |
 
 I used the following structure:
