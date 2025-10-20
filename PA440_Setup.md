@@ -43,9 +43,9 @@ I configured the dedicated MGT interface with the planned static IP address so I
    `set deviceconfig system type static`
    This ensures the MGT interface uses my static IP, not DHCP
 2. Set MGT IP Address and Netmask
-   `set deviceconfig system ip-address 192.168.12.254 netmask 255.255.255.0`
+   `set deviceconfig system ip-address 10.1.1.90 netmask 255.255.255.0`
 3. Set Default Gateway
-   `set deviceconfig system default-gateway 192.168.12.1`
+   `set deviceconfig system default-gateway 10.1.1.1`
    This is the IP of my T-Mobile Router for management access.
 4. Set Hostname
    `set deviceconfig system hostname Izzys-PA-440`
@@ -55,7 +55,7 @@ I configured the dedicated MGT interface with the planned static IP address so I
 ### 2.4 Initial Web GUI Access
 After the commit, I disconnected the console cable and moved to the Web GUI:
 1. Physical Connection: I connected my laptop to the MGT port on the PA-440
-2. Browser: I opened my browser and navigated to https://192.168.12.254
+2. Browser: I opened my browser and navigated to https://10.1.1.90
 3. Login: I logged in using the username admin and my newly set password
 4. Verification: I checked the Dashboard to confirm the hostname was correctly set
 
