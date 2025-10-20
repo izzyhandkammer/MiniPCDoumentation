@@ -26,18 +26,19 @@ This process involves downloading the base image from the Palo Alto Networks Cus
 Just like with the PA-440, the first and most critical step is to configure a static IP and change the default password so I can access the Web GUI.
 | Action              | Planned Value |
 |---------------------|---------------|
-| Planned MGT IP      | 10.1.1.20/24 |
+| Planned MGT IP      | 10.1.1.19/24 |
 | Planned MGT Gateway | 10.1.1.1      |
 
 I used the following structure:
 ```# Enter configuration mode
 configure
 
-# Set a strong admin password (CRITICAL STEP)
-set cli password <NEW_PASSWORD>
-
 # Set the Management Interface to a static IP
-set deviceconfig system ip-address <Panorama-IP> netmask <netmask> default-gateway <gateway-IP> dns-setting servers primary <DNS-IP>
+Set deviceconfig system ip-address 10.1.1.19
+Set deviceconfig system netmask 255.255.255.0
+Set deviceconfig system default-gateway 10.1.1.1
+Set deviceconfig system dns-setting servers primary 8.8.8.8
+Set deviceconfig system ntp-servers primary-ntp-server ntp-server-address north-america.pool.ntp.org
 
 # Commit the configuration
 commit
