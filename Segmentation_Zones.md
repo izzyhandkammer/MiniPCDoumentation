@@ -9,7 +9,7 @@ I configured $\text{ethernet1/2}$ for the Internet and $\text{ethernet1/1}$ and 
 |--------------------|-----------|----------------|-------------|----------------|
 | ethernet1/1        | $\text{Trust}$     | Layer3         | 10.1.1.1/24 | default        |
 | ethernet1/2        | $\text{UnTrust}$   | Layer3         | DHCP Client | default        |
-| ethernet1/3        | $\text{DMZ}$       | Layer3         | 10.1.3.0/24 | default        |
+| ethernet1/3        | $\text{DMZ}$       | Layer3         | 172.16.1.1/24 | default        |
 
 ### Step-by-Step Interface Configuration
 
