@@ -29,6 +29,5 @@ These are the required milestones I set out to achieve with this home lab:
 ## Documentation & Setup Refinements:
 * `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
-* `Panorama_Onboarding.md`: Update this section with the relevant IP address, confirm the final disk allocation, and detail the steps beyond the license retrieval issue (manual licensing, template creation, device group)
-* Complete User-ID configuration and documentation.
-* `LibreBoard_DMZ.md` finish config and create documentation in github as well as adding to network diagram
+* `Decryption.md`: Do it.
+* `LibreBoard_DMZ.md` finish notes on ethernet cabling and ping testing
