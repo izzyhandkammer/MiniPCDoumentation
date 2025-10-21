@@ -11,7 +11,7 @@ These are the required milestones I set out to achieve with this home lab:
 * The onboarding of the PA-VM to a centralized Panorama management server.
 * The implementation of a security policy based on User-ID to demonstrate identity-aware access control.
 
-# Ordered Table of Contents
+## Ordered Table of Contents
 | # | Document                                                          | Status      | Coverage                                                                                 |
 |---|-------------------------------------------------------------------|-------------|------------------------------------------------------------------------------------------|
 | 1 | [PA-440 Setup](PA440_Setup.md)                                    | Complete    | Initial firewall setup, MGT access, and base system configuration.                       |
@@ -22,8 +22,10 @@ These are the required milestones I set out to achieve with this home lab:
 | 6 | [Onboarding Panorama](Panorama_Onboarding.md)                     | In Progress | Deploying the Panorama VM and connecting the PA-440 for central management.              |
 | 7 | User-ID Implementation                                            | Pending     | Configuring identity-aware access control.                                               |
 
-# To Do:
+## Network Diagram
+![Network Topology](IH_HomeLab_Network_Diagram.png)
 
+# To Do:
 ## Documentation & Setup Refinements:
 * `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
