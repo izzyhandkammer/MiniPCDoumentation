@@ -61,5 +61,16 @@ Although the automated license retrieval process failed, I still needed the uniq
 1. Navigate to Panorama $\rightarrow$ General Settings
 2. In the Serial Number field, I entered the specific serial number provided for my evaluation
 3. Click OK
+4. I clicked OK. Note: This step took a noticeable amount of time, indicating an auto-commit and registration process was running in the background.
+5. After the loading is complete, refresh the page. You will be propted to retrieve licenses (it will fail).
+6. Navigate to Licenses, you should see that the license was pulled but the device certificate was missing.
 
-From here, typically the licenses are auto added (mine were not)
+### 2.3 Activating and Uploading the License File
+1. Navigate back to Setup and click "Get Certificate".
+2. Go to the Customer Support Portal and navigate to Products $\rightarrow$ Device Certificates.
+3. Generate an OTP and copy it to the clipboard
+4. Paste it into the box and hit Ok.
+5. Close the window and track the status on Tasks. Refresh the page after complete and now your Panorama should be officially licensed.
+
+## 3. Onboarding the Firewall to Panorama
+Follow [this tutorial](https://www.youtube.com/watch?v=a9W11FptkQQ) and now you've completed the Panorama deliverable!
