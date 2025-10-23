@@ -13,6 +13,15 @@ To avoid file system errors, I explicitly DID NOT use any OS Customization setti
 3. Default Login: I logged in using the default credentials [root, 1234].
 4. Security Setup: The system prompted me to set a root password and then create a standard non-root user.
 
+## Cabling and Physical Interface Notes
+Since the La Frite is a physical component, proper cabling was essential for the $\text{DMZ}$ segment to function.
+* **PA-440 Connection:** The $\text{end0}$ interface of the $\text{La Frite}$ was connected directly to the $\text{ethernet1/3}$ port on the PA-440. You could also use a dedicated switch port leading only to $\text{e1/3}$).
+* **Segment Isolation:** It was critical to ensure the La Frite was not accidentally plugged into the $\text{Trust}$ zone switch or the T-Mobile router, as this would completely bypass the firewall segmentation. I confirmed the $\text{172.16.1.1/24}$ subnet was exclusively handled by the  $\text{e1/3}$ interface.
+* **Link Status:** The link status changes based on hardware and configuration:
+   * Physical Link (Cable Connected): The LED status on both the La Frite and the $\text{ethernet1/3}$ port on the PA-440 will show a constant color (GREEN or YELLOW) immediately upon connection and power-on. This confirms the Layer 1 connection is good.
+   * Protocol Link (Before Config): The LED color will not change before configuring Netplan, as the link status is governed by hardware. The operational status is Down/Unready because the host has no valid IP address.
+   * Protocol Link (After Config): After running sudo netplan apply, the status will change to Up/Ready, and the LED will start flashing intermittently, indicating Layer 2/3 traffic is active (e.g., ARP requests, DNS lookups).
+
 ## 2. Configure Static IP (Netplan)
 1. Edit Netplan File: Access the network configuration file: `sudo nano /etc/netplan/01-netcfg.yaml`
 2. Apply Configuration: Ensure the file uses the correct interface name and settings:
@@ -55,6 +64,38 @@ Since I had to keep switching HDMI and Keyboard inputs between my PC and the Lib
 To fully test the App-ID and Content-ID features, I installed several key services on the DMZ host.
 | Feature Test      | LibreBoard Command (Preparation)             | Purpose in Lab                                                                                                           |
 |-------------------|----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| HTTP/HTTPS Access | sudo apt install nginx -y                    | Host a simple web page to test $\text{web-browsing}$ and $\text{ssl}$ $\text{App-IDs}$.                                  |
-| Granular App-ID   | sudo apt install vsftpd -y                   | Install an $\text{FTP}$ server to test specific application blocking ($\text{ftp}$ $\text{App-ID}$) between zones.       |
-| iPerf3 Traffic    | sudo apt install iperf3 -y and run iperf3 -s | Generates high-volume, specific traffic to test $\text{iperf}$ $\text{App-ID}$ identification and blocking capabilities. |
+| HTTP/HTTPS Access | `sudo apt install nginx -y`                    | Host a simple web page to test $\text{web-browsing}$ and $\text{ssl}$ $\text{App-IDs}$.                                  |
+| Granular App-ID   | `sudo apt install vsftpd -y`                   | Install an $\text{FTP}$ server to test specific application blocking ($\text{ftp}$ $\text{App-ID}$) between zones.       |
+| iPerf3 Traffic    | `sudo apt install iperf3 -y and run iperf3 -s` | Generates high-volume, specific traffic to test $\text{iperf}$ $\text{App-ID}$ identification and blocking capabilities. |
+
+I recommend first testing ping connectivity between the $\text{DMZ}$ and the $\text{Trust}$ (`ping 10.1.1.5` or `ping host 10.1.1.5`) and $\text{UnTrust}$ (`8.8.8.8`).
+
+These tests ensure the firewall correctly identifies traffic based on the application itself, regardless of the port number, and enforces policy accordingly.
+| Feature Test            | LibreBoard Preparation Command                | Client Action (from Ubuntu-Client)                   | PA-440 Verification & Proof                                                                                                                                                                                  |
+|-------------------------|-----------------------------------------------|------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| HTTP Access             | `sudo systemctl start nginx`                    | Browser: Navigate to http://172.16.1.100.            | Success: Verify $\text{web-browsing}$ App-ID is logged ($\text{Trust} \rightarrow \text{DMZ}$).                                                                                                              |
+| Granular App-ID Block   | `sudo systemctl start vsftpd`                   | Attempt an $\text{FTP}$ connection: ftp 172.16.1.100 | Deny/Block: Change $\text{Trust} \rightarrow \text{DMZ}$ rule to explicitly Deny the $\text{ftp}$ App-ID. Verify a deny action and Application: ftp in the $\text{Monitor} \rightarrow \text{Traffic}$ logs. |
+| Protocol Identification | Run $\text{iperf3}$ in server mode: `iperf3 -s` | Run the client test: iperf3 -c 172.16.1.100          | Identify: Ensure the traffic is logged as Application: iperf. Test blocking the $\text{iperf}$ App-ID to confirm the firewall correctly enforces the denial.                                                 |
+
+## Troubleshooting and Validation
+### Netplan Configuration and Activation
+If the $\text{La Frite}$ cannot ping its own gateway ($\text{172.16.1.1}$) after running $\text{sudo netplan apply}$:
+| Symptom                                           | Cause                                                                                                                                      | Solution                                                                                                                                                                      |
+|---------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Error: [Errno 99] Cannot assign requested address | The $\text{YAML}$ file has incorrect indentation (used $\text{Tab}$ instead of $\text{Space}$) or a typo in the IP address/interface name. | Re-run sudo nano /etc/netplan/01-netcfg.yaml. Verify all indentation uses spaces. CRITICAL: Ensure the interface name is correctly typed as $\text{end0}$, not $\text{eth0}$. |
+| Old IP Persists                                   | The $\text{NetworkManager}$ process is interfering with $\text{Netplan}$'s static assignment.                                              | Reboot the $\text{La Frite}$. If the problem continues, temporarily stop the manager: sudo systemctl stop NetworkManager.                                                     |
+| No Internet Access (Ping Fails to 8.8.8.8)        | The routes section is missing or incorrect.                                                                                                | Ensure the routes section explicitly defines the gateway: via: 172.16.1.1. Check the PA-440 logs for a $\text{DENY}$ action, which indicates the firewall policy is missing.  |
+
+### Physical and PA-440 Connectivity Issues
+If the $\text{La Frite}$ is correctly configured but still cannot ping the outside world:
+| Symptom                                | Cause                                                                                | Solution                                                                                                                                                                                                                                                         |
+|----------------------------------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| No Link Light                          | Bad cable or the PA-440 port is not active.                                          | Swap the Ethernet cable. On the PA-440 GUI, check $\text{Network} \rightarrow \text{Interfaces} \rightarrow \text{ethernet1/3}$ to ensure the link status is UP/GREEN.                                                                                           |
+| Gateway Cannot Be Reached (172.16.1.1) | The subnet mask on the $\text{La Frite}$ is incorrect.                               | On the $\text{La Frite}$, verify the Netplan config uses $\text{/24}$ ($\text{255.255.255.0}$) to match the PA-440.                                                                                                                                              |
+| Pings Denied to Trust Zone             | Expected Behavior. The PA-440's implicit security rule blocks traffic between zones. | Verify the PA-440 $\text{Monitor} \rightarrow \text{Traffic}$ log shows a DENY action by the deny-all-interzone rule. This confirms segmentation is WORKING. You must explicitly create a $\text{Trust} \rightarrow \text{DMZ}$ rule to allow $\text{ICMP/SSH}$. |
+
+### User-ID and SSH Access Issues
+| Symptom                              | Cause                                                                      | Solution                                                                                                                                                                                                        |
+|--------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SSH connection fails from Trust VM   | The $\text{Trust} \rightarrow \text{DMZ}$ policy is blocking $\text{SSH}$. | On the PA-440, ensure an explicit security rule is at the top of the list allowing $\text{Source Zone: Trust}$ to $\text{Destination Zone: DMZ}$ with the $\text{Application: ssh}$ and $\text{Action: Allow}$. |
+| SSH access fails (Permission denied) | Local user credentials or service failure.                                 | On the $\text{La Frite}$ console, verify the $\text{ssh}$ service is running (sudo systemctl status ssh) and that you are using the correct user password.                                                 |
