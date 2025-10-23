@@ -30,4 +30,3 @@ These are the required milestones I set out to achieve with this home lab:
 * `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
 * `Decryption.md`: Do it.
-* `LibreBoard_DMZ.md` finish notes on ethernet cabling and ping testing
