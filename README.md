@@ -20,13 +20,11 @@ These are the required milestones I set out to achieve with this home lab:
 | 4 | [App-ID and Content-ID Security](AppId_ContentId.md)              | Complete    | Refining the security policy using NGFW features.                                        |
 | 5 | [LibreBoard Server Setup](LibreBoard_DMZ.md)                      | Complete    | Creation and configuration of DMZ server.                                                |
 | 6 | [Onboarding Panorama](Panorama_Onboarding.md)                     | Complete    | Deploying the Panorama VM and connecting the PA-440 for central management.              |
-| 7 | User-ID Implementation                                            | Pending     | Configuring identity-aware access control.                                               |
+| 7 | [Enabling Decyrption](Decryption.md)                                            | Complete     | Configuring Decryption for visibility.                                               |
 
 ## Network Diagram
 ![Network Topology](IH_HomeLab_Network_Diagram.png)
 
 # To Do:
 ## Documentation & Setup Refinements:
-* `Segmentation_Zones.md`: Cross-check my OSPF configuration against a working model to ensure correctness.
 ## Pending Deliverables & Configuration:
-* `Decryption.md`: Do it.
