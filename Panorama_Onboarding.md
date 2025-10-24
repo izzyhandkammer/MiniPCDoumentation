@@ -1,4 +1,4 @@
-# Centralized Management with Panorama (in progress)
+# Centralized Management with Panorama
 The next key deliverable is to centralize management of the PA-440 using a Panorama management server. The first step is deploying the Panorama Virtual Machine (VM).
 
 ## 1. Deploying the Panorama Virtual Appliance
