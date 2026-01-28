@@ -19,7 +19,7 @@
 	Repeat: Hourly
 8. Create a policy to block the malicious IPs
 9. Verify in the firewall (giving time for the list to populate)
-![[EDL.png]]
+![EDl](Assets/EDL.png)
 # App-Override
 1. Phase 1: Creating the App
 	- Go to Objects → Applications and click Add
@@ -38,7 +38,7 @@
 4. Testing with the CLI:
 	- On my server I ran `timeout 1 bash -c 'cat < /dev/null > /dev/tcp/10.0.2.22/8888'`
 	- Now check Monitor → Traffic Logs. If you see Lab-Override-App in the application column, you’ve successfully bypassed App-ID!
-![[AppOverride.png]]
+![App Override](Assets/AppOverride.png)
 
 # IoT
 1. Activating in SCM
@@ -46,4 +46,4 @@
 	- SCM will ask you to activate the tenant if its your first time
 2. Wait for the data: It usually takes about 15-30 minutes of active traffic before devices start popping up in the inventory
 3. Once the logs start hitting the Strata Logging Service (SLS), head over to the Inventory page
-![[IoT.png]]
+![IoT](Assets/IoT.png)
