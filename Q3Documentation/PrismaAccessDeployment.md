@@ -31,3 +31,22 @@ Once the cloud status is green, deploy the agent to the test endpoint
 * Use the hostname as the portal, and log in to the agent
 
 Verification Success: The GlobalProtect icon in the system tray should show a "Connected" status with a shield icon
+
+# ADEM for MU
+## 1. Defining the Application Suite
+* Navigate to SCM > Insights > Application Experience
+* Click the configuration icon in the top right corner
+* On the Application Suites tab, select Create Application Suite
+* Configure the suite: Name: `youtube` Add Domain: `www.youtube.com`
+* Save
+
+## 2. Creating Application Tests
+* Switch to the Application Tests tab
+* Select Create Application Test
+* Configure the test: Name: `youtube` Add Domain URL: `www.youtube.com`
+* Save
+
+## 3. Verification & Insights
+* On the test machine connected via GlobalProtect, browse to YouTube and run video content for 10–20 minutes
+* Return to the SCM > Insights > Application Experience dashboard
+* Review the Application tab to see metrics
