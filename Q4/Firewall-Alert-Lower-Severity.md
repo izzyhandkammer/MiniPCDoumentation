@@ -17,4 +17,4 @@
 		* id: `${issue.id}`
 		* severity: `low`
 		* status: Resolved - `Known Issue`
-9. Test the playbook by downloading [sample malware]([url](https://docs.paloaltonetworks.com/advanced-wildfire/administration/configure-advanced-wildfire-analysis/verify-wildfire-submissions/test-a-sample-malware-file))
+9. Test the playbook by downloading [sample malware](https://docs.paloaltonetworks.com/advanced-wildfire/administration/configure-advanced-wildfire-analysis/verify-wildfire-submissions/test-a-sample-malware-file)
