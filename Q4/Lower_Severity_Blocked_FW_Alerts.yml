@@ -1,0 +1,178 @@
+id: 097e5cf3-1409-42c3-8bd6-4a51730cc960
+version: 4
+vcShouldKeepItemLegacyProdMachine: false
+aclrelations: []
+aclowner:
+  id: ""
+  type: ""
+  name: ""
+name: Lower Severity Blocked FW Alerts
+description: workflow to automatically lower the severity of alerts that have been
+  blocked on the firewall
+tags:
+- Q4 KSO
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 93dfb094-0dc9-4d6b-849f-d089c74d4715
+    type: start
+    task:
+      id: 93dfb094-0dc9-4d6b-849f-d089c74d4715
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "1":
+    id: "1"
+    taskid: 66412fdf-a7ec-42e0-8d39-d2f0fd7c19a6
+    type: condition
+    task:
+      id: 66412fdf-a7ec-42e0-8d39-d2f0fd7c19a6
+      version: -1
+      name: Was the threat blocked?
+      type: condition
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#default#':
+      - "3"
+      "yes":
+      - "2"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              simple: issue.alert_action_status
+            iscontext: true
+          right:
+            value:
+              simple: BLOCKED
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 450,
+          "y": 230
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "2":
+    id: "2"
+    taskid: 7d367674-2d4c-41ef-a226-20b8116b568a
+    type: regular
+    task:
+      id: 7d367674-2d4c-41ef-a226-20b8116b568a
+      version: -1
+      name: update-issue
+      description: Updates the properties of an issue. This command does not provide
+        an explicit indication of success.
+      script: Cortex Core - Platform|||core-update-issue
+      type: regular
+      iscommand: true
+      brand: Cortex Core - Platform
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    scriptarguments:
+      id:
+        simple: ${issue.id}
+      severity:
+        simple: low
+      status:
+        simple: Resolved - Known Issue
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 160,
+          "y": 430
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "3":
+    id: "3"
+    taskid: d80ef9eb-1057-442f-86cd-b5e44d149249
+    type: title
+    task:
+      id: d80ef9eb-1057-442f-86cd-b5e44d149249
+      version: -1
+      name: Do nothing
+      type: title
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 740,
+          "y": 437.5
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+outlinetasks: {}
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 455,
+        "width": 960,
+        "x": 160,
+        "y": 50
+      }
+    }
+  }
+inputs: []
+outputs: []
+quiet: true
+dirtyInputs: true
+adopted: true
+possibleresponses: []
