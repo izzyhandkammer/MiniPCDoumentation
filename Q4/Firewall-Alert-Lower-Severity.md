@@ -18,3 +18,6 @@
 		* severity: `low`
 		* status: Resolved - `Known Issue`
 9. Test the playbook by downloading [sample malware](https://docs.paloaltonetworks.com/advanced-wildfire/administration/configure-advanced-wildfire-analysis/verify-wildfire-submissions/test-a-sample-malware-file)
+![Case](Assets/FW-Playbook-Case.png)
+![Workplan](Assets/FW-Playbook-Workplan.png)
+
