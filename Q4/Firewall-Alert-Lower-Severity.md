@@ -1,3 +1,4 @@
+Note: to replicate this, you can just download the yml file in the repo and then upload it to playbooks. Just need to build the automation rule from there and link it
 # Firewall Alert Exclusions
 1. make sure your xdr instance is in the same TSG as your firewall
 2. Settings → Datasources and Integrations → Add New → NGFW
