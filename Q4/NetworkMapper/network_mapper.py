@@ -3,16 +3,17 @@ import requests
 import time
 import re
 import subprocess
+import os
 
 scanner = nmap.PortScanner()
 
-SUBNET = ""  # Specify the target network range
+SUBNET = os.getenv("SUBNET")  # Specify the target network range
 KNOWN_HOSTS = "known_macs.txt"
 
 # XDR API Credentials
-XDR_URL = "https://izzylab.xdr.us.paloaltonetworks.com" 
-API_KEY = "YOUR_API_KEY"
-API_KEY_ID = "1"
+XDR_URL = os.getenv("XDR_URL")
+API_KEY = os.getenv("API_KEY")
+API_KEY_ID = os.getenv("API_KEY_ID")
 
 def load_known_hosts():
     """Load known hosts from a file."""
