@@ -13,9 +13,15 @@ scanner = nmap.PortScanner()
 BASE_DIR = Path(__file__).resolve().parent
 ENV_FILE = BASE_DIR / ".env"
 
-load_dotenv()
+if not ENV_FILE.exists():
+    print(f"[!] Warning: .env file not found at {ENV_FILE}")
+
+load_dotenv(ENV_FILE)
 
 SUBNET = os.getenv("SUBNET")  # Specify the target network range
+if not SUBNET:
+    raise SystemExit("[!] Missing SUBNET value in .env. Please set SUBNET=10.1.1.0/24")
+
 KNOWN_HOSTS = BASE_DIR / "known_macs.txt"
 
 # XDR API Credentials
