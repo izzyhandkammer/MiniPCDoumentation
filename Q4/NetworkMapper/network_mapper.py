@@ -1,10 +1,8 @@
 import nmap
 import requests
 import time
-import re
-import subprocess
+import socket
 import os
-import shutil
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -18,9 +16,12 @@ if not ENV_FILE.exists():
 
 load_dotenv(ENV_FILE)
 
-SUBNET = os.getenv("SUBNET")  # Specify the target network range
+SUBNET = os.getenv("SUBNET")  # Wifi network range to scan for new devices
 if not SUBNET:
-    raise SystemExit("[!] Missing SUBNET value in .env. Please set SUBNET=10.1.1.0/24")
+    raise SystemExit("[!] Missing SUBNET value in .env. Please set SUBNET.")
+
+MAC_VENDOR_API = "https://api.macvendors.com/{}"
+_last_vendor_lookup = 0.0
 
 KNOWN_HOSTS = BASE_DIR / "known_macs.txt"
 
@@ -29,16 +30,6 @@ XDR_URL = os.getenv("XDR_URL")
 API_KEY = os.getenv("API_KEY")
 API_KEY_ID = os.getenv("API_KEY_ID")
 TEST = os.getenv("TEST")
-
-def build_scan_command(target_subnet):
-    """Build the nmap command for the current platform."""
-    if os.name == "nt":
-        return ["nmap", "-sn", target_subnet]
-
-    if shutil.which("sudo"):
-        return ["sudo", "nmap", "-sn", target_subnet]
-
-    return ["nmap", "-sn", target_subnet]
 
 
 def load_known_hosts():
@@ -55,51 +46,108 @@ def append_new_mac(mac_address):
     with open(KNOWN_HOSTS, 'a', encoding="utf-8") as file:
         file.write(f"\n{mac_address.lower()}")
 
-def run_scan():
-    """run a sudo nmap scan on the subnet and parses IPs and MAC addresses from the raw text output"""
-    print (f"[*] env import {TEST}...")
-    print (f"[*] Starting network scan on {SUBNET}...")
+
+def discover_devices():
+    """Fast ping sweep of the subnet; returns live hosts with MAC, nmap's offline vendor guess, and hostname."""
+    print(f"[*] Starting discovery scan on {SUBNET}...")
     try:
-        command = build_scan_command(SUBNET)
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"Error running nmap: {e}")
+        scanner.scan(hosts=SUBNET, arguments="-sn")
+    except nmap.PortScannerError as e:
+        print(f"[-] Error running nmap discovery scan: {e}")
         return []
 
-    scan_output = result.stdout
     devices_found = []
+    for host in scanner.all_hosts():
+        if scanner[host].state() != "up":
+            continue
 
-    host_blocks = scan_output.split("Nmap scan report for ")
+        mac_address = scanner[host]["addresses"].get("mac")
+        if not mac_address:
+            continue  # No MAC visible (ARP unavailable) means it's not on our local segment
 
-    for block in host_blocks[1:]:  # Skip the first split as it will be empty
-        lines = block.splitlines()
-        ip_match = re.search(r'(\d+\.\d+\.\d+\.\d+)', lines[0])
+        mac_address = mac_address.lower()
+        vendor_dict = scanner[host].get("vendor", {})
+        vendor = next(iter(vendor_dict.values()), None)
+        hostname = scanner[host].hostname() or None
 
-# these .group(1) calls could be an issue
-        if ip_match:
-            ip_address = ip_match.group(1)
-            mac_address = None
-
-            for line in lines:
-                if "MAC Address" in line:
-                    mac_match = re.search(r'MAC Address: ([0-9A-Fa-f:]+)', line)
-                    if mac_match:
-                        mac_address = mac_match.group(1).lower()
-                        break
-            if mac_address:
-                devices_found.append({"ip": ip_address, "mac": mac_address})
+        devices_found.append({
+            "ip": host,
+            "mac": mac_address,
+            "vendor": vendor,
+            "hostname": hostname,
+        })
     return devices_found
 
 
-def send_to_xdr(ip, mac):
+def deep_scan_host(ip):
+    """OS fingerprint + service/version detection + default NSE scripts against a single new device."""
+    print(f"[*] Running deep scan on {ip}...")
+    try:
+        scanner.scan(hosts=ip, arguments="-O -sV -sC -T4 --osscan-guess")
+    except nmap.PortScannerError as e:
+        print(f"[-] Error running deep scan on {ip}: {e}")
+        return {"os_guess": "Unknown", "open_ports": []}
+
+    if ip not in scanner.all_hosts():
+        return {"os_guess": "Unknown", "open_ports": []}
+
+    host_info = scanner[ip]
+
+    os_guess = "Unknown"
+    osmatches = host_info.get("osmatch")
+    if osmatches:
+        best = osmatches[0]
+        os_guess = f"{best['name']} ({best['accuracy']}% confidence)"
+
+    open_ports = []
+    for proto in ("tcp", "udp"):
+        for port, port_info in host_info.get(proto, {}).items():
+            if port_info.get("state") != "open":
+                continue
+            descriptor = f"{port}/{proto} {port_info.get('name', 'unknown')}"
+            extra = " ".join(filter(None, [port_info.get("product"), port_info.get("version")]))
+            if extra:
+                descriptor += f" ({extra})"
+            open_ports.append(descriptor)
+
+    return {"os_guess": os_guess, "open_ports": open_ports}
+
+
+def resolve_hostname(ip_address):
+    """Fallback reverse DNS lookup when nmap didn't already resolve a hostname."""
+    try:
+        return socket.gethostbyaddr(ip_address)[0]
+    except (socket.herror, socket.gaierror, OSError):
+        return "Unknown"
+
+
+def get_mac_vendor(mac_address):
+    """Fallback OUI vendor lookup via api.macvendors.com, used when nmap's local database has no match."""
+    global _last_vendor_lookup
+
+    # Free tier is rate-limited to ~1 request/sec; throttle to stay under it.
+    elapsed = time.time() - _last_vendor_lookup
+    if elapsed < 1:
+        time.sleep(1 - elapsed)
+
+    try:
+        response = requests.get(MAC_VENDOR_API.format(mac_address), timeout=5)
+        _last_vendor_lookup = time.time()
+        if response.status_code == 200:
+            return response.text.strip()
+        if response.status_code == 404:
+            return "Unknown"
+        print(f"[-] MAC vendor lookup failed for {mac_address}: {response.status_code}")
+        return "Unknown"
+    except requests.RequestException as e:
+        print(f"[-] Error looking up MAC vendor for {mac_address}: {e}")
+        return "Unknown"
+
+
+def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown", os_guess="Unknown", open_ports=None):
     """
         format and posts a parsed alert to the XDR API
-        the documentation for formatting and posting a parsed alert to the XDR API can be found here: 
+        the documentation for formatting and posting a parsed alert to the XDR API can be found here:
         https://docs-cortex.paloaltonetworks.com/r/Cortex-XDR-REST-API/Insert-Parsed-Alerts
     """
     endpoint = f"{XDR_URL}/public_api/v1/alerts/insert_parsed_alerts"
@@ -110,6 +158,8 @@ def send_to_xdr(ip, mac):
         "Accept-Encoding": "gzip",
         "content-type": "application/json"
     }
+
+    ports_summary = "; ".join(open_ports) if open_ports else "No open ports detected"
 
     payload = {
         "request_data": {
@@ -122,7 +172,11 @@ def send_to_xdr(ip, mac):
                     "event_timestamp": int(time.time() * 1000),
                     "severity": "Medium",
                     "alert_name": "Rougue MAC Address Detected",
-                    "alert_description": f"An unverified device with MAC Address [{mac}] entered the network using IP [{ip}].",
+                    "alert_description": (
+                        f"An unverified device with MAC Address [{mac}] ({mac_vendor}) "
+                        f"and hostname [{hostname}] entered the network using IP [{ip}]. "
+                        f"OS guess: {os_guess}. Open ports: {ports_summary}."
+                    ),
                     "action_status": "Reported",
                     "remote_ip": "0.0.0.0",
                     "remote_port": 8888
@@ -148,20 +202,35 @@ def send_to_xdr(ip, mac):
 
 def main():
     known_hosts = load_known_hosts()
-    devices_found = run_scan()
+    devices_found = discover_devices()
 
     print(f"[*] Found {len(devices_found)} total alive devices.")
 
     for device in devices_found:
         ip = device["ip"]
         mac = device["mac"]
+        hostname = device["hostname"] or resolve_hostname(ip)
 
         if mac not in known_hosts:
-            print(f"[!] New device detected: IP: {ip}, MAC: {mac}")
+            mac_vendor = device["vendor"] or get_mac_vendor(mac)
+            deep_info = deep_scan_host(ip)
+            os_guess = deep_info["os_guess"]
+            open_ports = deep_info["open_ports"]
+
+            print(
+                f"[!] New device detected: IP: {ip}, MAC: {mac} ({mac_vendor}), "
+                f"Hostname: {hostname}, OS: {os_guess}, Open ports: {', '.join(open_ports) or 'none'}"
+            )
             append_new_mac(mac)
-            send_to_xdr(ip, mac)
+            send_to_xdr(
+                ip, mac,
+                hostname=hostname,
+                mac_vendor=mac_vendor,
+                os_guess=os_guess,
+                open_ports=open_ports,
+            )
         else:
-            print(f"[+] Known device: IP: {ip}, MAC: {mac}")
+            print(f"[+] Known device: IP: {ip}, MAC: {mac}, Hostname: {hostname}")
 
 if __name__ == "__main__":
     main()
