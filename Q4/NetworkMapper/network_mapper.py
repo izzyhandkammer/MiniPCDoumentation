@@ -1,11 +1,8 @@
 import nmap
 import requests
 import time
-import re
 import socket
-import subprocess
 import os
-import shutil
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -34,16 +31,6 @@ API_KEY = os.getenv("API_KEY")
 API_KEY_ID = os.getenv("API_KEY_ID")
 TEST = os.getenv("TEST")
 
-def build_scan_command(target_subnet):
-    """Build the nmap command for the current platform."""
-    if os.name == "nt":
-        return ["nmap", "-sn", target_subnet]
-
-    if shutil.which("sudo"):
-        return ["sudo", "nmap", "-sn", target_subnet]
-
-    return ["nmap", "-sn", target_subnet]
-
 
 def load_known_hosts():
     """Load known hosts from a file."""
@@ -59,52 +46,71 @@ def append_new_mac(mac_address):
     with open(KNOWN_HOSTS, 'a', encoding="utf-8") as file:
         file.write(f"\n{mac_address.lower()}")
 
-def run_scan():
-    """run a sudo nmap scan on the subnet and parses IPs and MAC addresses from the raw text output"""
-    print (f"[*] env import {TEST}...")
-    print (f"[*] Starting network scan on {SUBNET}...")
+
+def discover_devices():
+    """Fast ping sweep of the subnet; returns live hosts with MAC, nmap's offline vendor guess, and hostname."""
+    print(f"[*] Starting discovery scan on {SUBNET}...")
     try:
-        command = build_scan_command(SUBNET)
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"Error running nmap: {e}")
+        scanner.scan(hosts=SUBNET, arguments="-sn")
+    except nmap.PortScannerError as e:
+        print(f"[-] Error running nmap discovery scan: {e}")
         return []
 
-    scan_output = result.stdout
     devices_found = []
+    for host in scanner.all_hosts():
+        if scanner[host].state() != "up":
+            continue
 
-    host_blocks = scan_output.split("Nmap scan report for ")
+        mac_address = scanner[host]["addresses"].get("mac")
+        if not mac_address:
+            continue  # No MAC visible (ARP unavailable) means it's not on our local segment
 
-    for block in host_blocks[1:]:  # Skip the first split as it will be empty
-        lines = block.splitlines()
+        mac_address = mac_address.lower()
+        vendor_dict = scanner[host].get("vendor", {})
+        vendor = next(iter(vendor_dict.values()), None)
+        hostname = scanner[host].hostname() or None
 
-        # First line is either "hostname (ip)" (reverse DNS resolved) or just "ip"
-        header_match = re.match(
-            r'^(?:(?P<host>\S+) \((?P<ip1>\d+\.\d+\.\d+\.\d+)\)|(?P<ip2>\d+\.\d+\.\d+\.\d+))',
-            lines[0]
-        )
-
-        if header_match:
-            ip_address = header_match.group("ip1") or header_match.group("ip2")
-            hostname = header_match.group("host")
-            mac_address = None
-
-            for line in lines:
-                if "MAC Address" in line:
-                    mac_match = re.search(r'MAC Address: ([0-9A-Fa-f:]+)', line)
-                    if mac_match:
-                        mac_address = mac_match.group(1).lower()
-                        break
-            if mac_address:
-                if not hostname:
-                    hostname = resolve_hostname(ip_address)
-                devices_found.append({"ip": ip_address, "mac": mac_address, "hostname": hostname})
+        devices_found.append({
+            "ip": host,
+            "mac": mac_address,
+            "vendor": vendor,
+            "hostname": hostname,
+        })
     return devices_found
+
+
+def deep_scan_host(ip):
+    """OS fingerprint + service/version detection + default NSE scripts against a single new device."""
+    print(f"[*] Running deep scan on {ip}...")
+    try:
+        scanner.scan(hosts=ip, arguments="-O -sV -sC -T4 --osscan-guess")
+    except nmap.PortScannerError as e:
+        print(f"[-] Error running deep scan on {ip}: {e}")
+        return {"os_guess": "Unknown", "open_ports": []}
+
+    if ip not in scanner.all_hosts():
+        return {"os_guess": "Unknown", "open_ports": []}
+
+    host_info = scanner[ip]
+
+    os_guess = "Unknown"
+    osmatches = host_info.get("osmatch")
+    if osmatches:
+        best = osmatches[0]
+        os_guess = f"{best['name']} ({best['accuracy']}% confidence)"
+
+    open_ports = []
+    for proto in ("tcp", "udp"):
+        for port, port_info in host_info.get(proto, {}).items():
+            if port_info.get("state") != "open":
+                continue
+            descriptor = f"{port}/{proto} {port_info.get('name', 'unknown')}"
+            extra = " ".join(filter(None, [port_info.get("product"), port_info.get("version")]))
+            if extra:
+                descriptor += f" ({extra})"
+            open_ports.append(descriptor)
+
+    return {"os_guess": os_guess, "open_ports": open_ports}
 
 
 def resolve_hostname(ip_address):
@@ -116,7 +122,7 @@ def resolve_hostname(ip_address):
 
 
 def get_mac_vendor(mac_address):
-    """Look up the OUI vendor for a MAC address via api.macvendors.com."""
+    """Fallback OUI vendor lookup via api.macvendors.com, used when nmap's local database has no match."""
     global _last_vendor_lookup
 
     # Free tier is rate-limited to ~1 request/sec; throttle to stay under it.
@@ -138,7 +144,7 @@ def get_mac_vendor(mac_address):
         return "Unknown"
 
 
-def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown"):
+def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown", os_guess="Unknown", open_ports=None):
     """
         format and posts a parsed alert to the XDR API
         the documentation for formatting and posting a parsed alert to the XDR API can be found here:
@@ -153,6 +159,8 @@ def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown"):
         "content-type": "application/json"
     }
 
+    ports_summary = "; ".join(open_ports) if open_ports else "No open ports detected"
+
     payload = {
         "request_data": {
             "alerts": [
@@ -166,7 +174,8 @@ def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown"):
                     "alert_name": "Rougue MAC Address Detected",
                     "alert_description": (
                         f"An unverified device with MAC Address [{mac}] ({mac_vendor}) "
-                        f"and hostname [{hostname}] entered the network using IP [{ip}]."
+                        f"and hostname [{hostname}] entered the network using IP [{ip}]. "
+                        f"OS guess: {os_guess}. Open ports: {ports_summary}."
                     ),
                     "action_status": "Reported",
                     "remote_ip": "0.0.0.0",
@@ -193,20 +202,33 @@ def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown"):
 
 def main():
     known_hosts = load_known_hosts()
-    devices_found = run_scan()
+    devices_found = discover_devices()
 
     print(f"[*] Found {len(devices_found)} total alive devices.")
 
     for device in devices_found:
         ip = device["ip"]
         mac = device["mac"]
-        hostname = device.get("hostname") or "Unknown"
+        hostname = device["hostname"] or resolve_hostname(ip)
 
         if mac not in known_hosts:
-            mac_vendor = get_mac_vendor(mac)
-            print(f"[!] New device detected: IP: {ip}, MAC: {mac} ({mac_vendor}), Hostname: {hostname}")
+            mac_vendor = device["vendor"] or get_mac_vendor(mac)
+            deep_info = deep_scan_host(ip)
+            os_guess = deep_info["os_guess"]
+            open_ports = deep_info["open_ports"]
+
+            print(
+                f"[!] New device detected: IP: {ip}, MAC: {mac} ({mac_vendor}), "
+                f"Hostname: {hostname}, OS: {os_guess}, Open ports: {', '.join(open_ports) or 'none'}"
+            )
             append_new_mac(mac)
-            send_to_xdr(ip, mac, hostname=hostname, mac_vendor=mac_vendor)
+            send_to_xdr(
+                ip, mac,
+                hostname=hostname,
+                mac_vendor=mac_vendor,
+                os_guess=os_guess,
+                open_ports=open_ports,
+            )
         else:
             print(f"[+] Known device: IP: {ip}, MAC: {mac}, Hostname: {hostname}")
 

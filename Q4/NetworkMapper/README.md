@@ -1,6 +1,6 @@
 # Network Mapper
 
-This project scans your WiFi subnet with `nmap`, detects new MAC addresses joining the network, enriches each new device with its MAC vendor (via api.macvendors.com) and hostname (via reverse DNS), and sends alerts to a Cortex XDR endpoint. It's designed to run on a Raspberry Pi Zero W connected directly to the WiFi network it's monitoring, so ARP-based host discovery works without needing to cross firewall zone boundaries.
+This project scans your WiFi subnet with `nmap`, detects new MAC addresses joining the network, and enriches each new device before alerting Cortex XDR: MAC vendor (nmap's offline OUI database, falling back to api.macvendors.com), hostname (reverse DNS), OS fingerprint, and open ports/services (via a targeted `-O -sV -sC` scan). It's designed to run on a Raspberry Pi Zero W connected directly to the WiFi network it's monitoring, so ARP-based host discovery works without needing to cross firewall zone boundaries.
 
 ## What you need
 
@@ -52,16 +52,16 @@ TEST=true
 ## Run the scanner
 
 1. Make sure `.env` is present in the same folder as `network_mapper.py`.
-2. Run the script:
-   - `python3 network_mapper.py`
-3. The script will scan the subnet and print discovered devices, including hostname and MAC vendor for any new device.
+2. Run the script **as root** (required for ARP-based discovery and OS fingerprinting):
+   - `sudo .venv/bin/python3 network_mapper.py`
+3. The script will scan the subnet, then for any brand-new MAC it finds, run a deeper scan and print hostname, MAC vendor, OS guess, and open ports/services.
 
 ## Detecting new devices quickly
 
-The script itself runs a single scan-and-exit pass, so to catch devices "as they join" the WiFi network, schedule it to run every 1-2 minutes with `crontab`:
+The script itself runs a single scan-and-exit pass, so to catch devices "as they join" the WiFi network, schedule it to run every 1-2 minutes with **root's** `crontab` (the deep OS/service scan needs raw-socket privileges, so the cron job must run as root, not the `pi` user):
 
 ```bash
-crontab -e
+sudo crontab -e
 ```
 
 Add a line like:
@@ -70,19 +70,23 @@ Add a line like:
 */2 * * * * cd /path/to/NetworkMapper && /path/to/.venv/bin/python3 network_mapper.py >> scan.log 2>&1
 ```
 
-This re-scans the WiFi subnet every 2 minutes; any MAC not already in `known_macs.txt` is treated as new, enriched, and alerted to XDR. Since the Pi lives on the WiFi subnet itself, nmap can use real ARP discovery here rather than routed ICMP probes, so results are more complete than scanning from a device on a different subnet/zone.
+This re-scans the WiFi subnet every 2 minutes; any MAC not already in `known_macs.txt` is treated as new, deep-scanned, and alerted to XDR. Since the Pi lives on the WiFi subnet itself, nmap can use real ARP discovery here rather than routed ICMP probes, so results are more complete than scanning from a device on a different subnet/zone.
+
+Because the deep scan (`-O -sV -sC`) runs a full port scan against each new device, expect it to take anywhere from several seconds to a couple of minutes per new device — that's fine for a low-churn home network, since it only fires on genuinely new MACs, not on every sweep.
 
 ## Enrichment
 
+- **MAC vendor**: nmap's bundled offline OUI database is checked first (works even with no internet access); if nmap doesn't recognize the OUI, the free `api.macvendors.com` API is used as a fallback, throttled to ~1 request/second. Locally-administered/randomized MACs (common on phones by default) won't resolve either way.
 - **Hostname**: taken from nmap's reverse-DNS resolution when available, with a Python `socket.gethostbyaddr` fallback. Devices with no PTR record and no NetBIOS/mDNS response will show as `Unknown`.
-- **MAC vendor**: looked up via the free `api.macvendors.com` API. This is an outbound network call per new device and is throttled to ~1 request/second to respect the API's rate limit. Locally-administered/randomized MACs (common on phones by default) will not resolve to a vendor.
+- **OS fingerprint**: nmap's `-O` OS detection, run only against new devices. Accuracy varies — some devices (especially phones/IoT) won't fingerprint cleanly and will show as `Unknown`.
+- **Open ports/services**: nmap's `-sV -sC` service/version detection plus default NSE scripts, run only against new devices. Lists each open port with its service name and, when detected, product/version.
 
 ## Notes
 
 - The script expects a `known_macs.txt` file in the project folder. If it does not exist, it will start with an empty known list.
 - Add the currently connected devices to `known_macs.txt` first if you want to create a baseline and only alert on unknown MAC addresses.
 - If the scan fails with a missing subnet error, double-check that `SUBNET` is set in `.env`.
-- Run the scanner as a user with `sudo` access since `nmap` may require privileges for full ARP-based host discovery.
+- The script must run as root — ARP-based host discovery and `-O` OS detection both require raw-socket privileges nmap can't get otherwise. Without root, OS detection will silently return `Unknown` for every device.
 - Since the Pi sits on the WiFi network being monitored (not the trust network), keep the `.env` XDR credentials on the Pi's filesystem only and avoid exposing SSH to that network beyond what you need.
 
 ## Optional improvements
