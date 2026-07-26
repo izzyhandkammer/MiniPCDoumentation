@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -52,7 +53,8 @@ class SOCBot(discord.Client):
 
     async def handle_webhook(self, request):
         try:
-            data = await request.json(content_type=None)
+            body = await request.text()
+            data = json.loads(body)
             logger.info("Received webhook data: %s", data)
 
             alert_id = data.get("alert_id") or data.get("id") or "unknown"
@@ -107,6 +109,15 @@ async def resolve(interaction: discord.Interaction, alert_id: str):
     print(f"[SOC-BOT] /resolve invoked for alert_id={alert_id}")
     logger.info("/resolve invoked for alert_id=%s", alert_id)
 
+    alert_id = alert_id.strip()
+    if not alert_id.isdigit():
+        await interaction.followup.send(
+            "That is not a valid Cortex alert ID (must be numeric). "
+            "Use the Alert ID from a real XDR alert embed—not IDs like `test-12345` from manual webhook tests.",
+            ephemeral=True,
+        )
+        return
+
     # Show masked Cortex credential presence for debugging (do not reveal secrets)
     print(
         "[SOC-BOT] Cortex config: FQDN=%s, API_KEY_ID=%s, API_KEY=%s"
@@ -118,7 +129,7 @@ async def resolve(interaction: discord.Interaction, alert_id: str):
         await interaction.followup.send("Cortex credentials are not configured.", ephemeral=True)
         return
 
-    url = f"https://{CORTEX_FQDN}/public_api/v1/incidents/update_incident"
+    url = f"https://{CORTEX_FQDN}/public_api/v1/alerts/update_alerts"
     headers = {
         "Authorization": CORTEX_API_KEY,
         "x-xdr-auth-id": CORTEX_API_KEY_ID,
@@ -129,8 +140,8 @@ async def resolve(interaction: discord.Interaction, alert_id: str):
         "request_data": {
             "alert_id_list": [alert_id],
             "update_data": {
-                "status": "resolved",
-                "resolution_reason": "Resolved via Discord SOC Bot",
+                "status": "resolved_other",
+                "comment": "Resolved via Discord SOC Bot",
             },
         }
     }

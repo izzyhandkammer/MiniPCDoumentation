@@ -26,6 +26,7 @@ CORTEX_API_KEY=your_xdr_api_key
 - `DISCORD_BOT_TOKEN`: bot token from the Developer Portal.
 - `DISCORD_CHANNEL_ID`: numeric Discord channel ID where alerts should be posted.
 - `CORTEX_FQDN`, `CORTEX_API_KEY_ID`, and `CORTEX_API_KEY`: used by the `/resolve` command to update alerts in Cortex XDR.
+  - `CORTEX_FQDN` must be the **API** hostname from the XDR console (for example `api-<tenant>.xdr.us.paloaltonetworks.com`), not the web UI URL (`<tenant>.xdr.us.paloaltonetworks.com`).
 
 ## Running
 
