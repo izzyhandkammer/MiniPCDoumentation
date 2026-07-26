@@ -2,6 +2,7 @@ import nmap
 import requests
 import time
 import re
+import socket
 import subprocess
 import os
 import shutil
@@ -18,9 +19,12 @@ if not ENV_FILE.exists():
 
 load_dotenv(ENV_FILE)
 
-SUBNET = os.getenv("SUBNET")  # Specify the target network range
+SUBNET = os.getenv("SUBNET")  # Wifi network range to scan for new devices
 if not SUBNET:
-    raise SystemExit("[!] Missing SUBNET value in .env. Please set SUBNET=10.1.1.0/24")
+    raise SystemExit("[!] Missing SUBNET value in .env. Please set SUBNET.")
+
+MAC_VENDOR_API = "https://api.macvendors.com/{}"
+_last_vendor_lookup = 0.0
 
 KNOWN_HOSTS = BASE_DIR / "known_macs.txt"
 
@@ -78,11 +82,16 @@ def run_scan():
 
     for block in host_blocks[1:]:  # Skip the first split as it will be empty
         lines = block.splitlines()
-        ip_match = re.search(r'(\d+\.\d+\.\d+\.\d+)', lines[0])
 
-# these .group(1) calls could be an issue
-        if ip_match:
-            ip_address = ip_match.group(1)
+        # First line is either "hostname (ip)" (reverse DNS resolved) or just "ip"
+        header_match = re.match(
+            r'^(?:(?P<host>\S+) \((?P<ip1>\d+\.\d+\.\d+\.\d+)\)|(?P<ip2>\d+\.\d+\.\d+\.\d+))',
+            lines[0]
+        )
+
+        if header_match:
+            ip_address = header_match.group("ip1") or header_match.group("ip2")
+            hostname = header_match.group("host")
             mac_address = None
 
             for line in lines:
@@ -92,14 +101,47 @@ def run_scan():
                         mac_address = mac_match.group(1).lower()
                         break
             if mac_address:
-                devices_found.append({"ip": ip_address, "mac": mac_address})
+                if not hostname:
+                    hostname = resolve_hostname(ip_address)
+                devices_found.append({"ip": ip_address, "mac": mac_address, "hostname": hostname})
     return devices_found
 
 
-def send_to_xdr(ip, mac):
+def resolve_hostname(ip_address):
+    """Fallback reverse DNS lookup when nmap didn't already resolve a hostname."""
+    try:
+        return socket.gethostbyaddr(ip_address)[0]
+    except (socket.herror, socket.gaierror, OSError):
+        return "Unknown"
+
+
+def get_mac_vendor(mac_address):
+    """Look up the OUI vendor for a MAC address via api.macvendors.com."""
+    global _last_vendor_lookup
+
+    # Free tier is rate-limited to ~1 request/sec; throttle to stay under it.
+    elapsed = time.time() - _last_vendor_lookup
+    if elapsed < 1:
+        time.sleep(1 - elapsed)
+
+    try:
+        response = requests.get(MAC_VENDOR_API.format(mac_address), timeout=5)
+        _last_vendor_lookup = time.time()
+        if response.status_code == 200:
+            return response.text.strip()
+        if response.status_code == 404:
+            return "Unknown"
+        print(f"[-] MAC vendor lookup failed for {mac_address}: {response.status_code}")
+        return "Unknown"
+    except requests.RequestException as e:
+        print(f"[-] Error looking up MAC vendor for {mac_address}: {e}")
+        return "Unknown"
+
+
+def send_to_xdr(ip, mac, hostname="Unknown", mac_vendor="Unknown"):
     """
         format and posts a parsed alert to the XDR API
-        the documentation for formatting and posting a parsed alert to the XDR API can be found here: 
+        the documentation for formatting and posting a parsed alert to the XDR API can be found here:
         https://docs-cortex.paloaltonetworks.com/r/Cortex-XDR-REST-API/Insert-Parsed-Alerts
     """
     endpoint = f"{XDR_URL}/public_api/v1/alerts/insert_parsed_alerts"
@@ -122,7 +164,10 @@ def send_to_xdr(ip, mac):
                     "event_timestamp": int(time.time() * 1000),
                     "severity": "Medium",
                     "alert_name": "Rougue MAC Address Detected",
-                    "alert_description": f"An unverified device with MAC Address [{mac}] entered the network using IP [{ip}].",
+                    "alert_description": (
+                        f"An unverified device with MAC Address [{mac}] ({mac_vendor}) "
+                        f"and hostname [{hostname}] entered the network using IP [{ip}]."
+                    ),
                     "action_status": "Reported",
                     "remote_ip": "0.0.0.0",
                     "remote_port": 8888
@@ -155,13 +200,15 @@ def main():
     for device in devices_found:
         ip = device["ip"]
         mac = device["mac"]
+        hostname = device.get("hostname") or "Unknown"
 
         if mac not in known_hosts:
-            print(f"[!] New device detected: IP: {ip}, MAC: {mac}")
+            mac_vendor = get_mac_vendor(mac)
+            print(f"[!] New device detected: IP: {ip}, MAC: {mac} ({mac_vendor}), Hostname: {hostname}")
             append_new_mac(mac)
-            send_to_xdr(ip, mac)
+            send_to_xdr(ip, mac, hostname=hostname, mac_vendor=mac_vendor)
         else:
-            print(f"[+] Known device: IP: {ip}, MAC: {mac}")
+            print(f"[+] Known device: IP: {ip}, MAC: {mac}, Hostname: {hostname}")
 
 if __name__ == "__main__":
     main()
