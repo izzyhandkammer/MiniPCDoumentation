@@ -1,0 +1,324 @@
+id: 34caa937-719b-406b-880c-565c80356498
+version: 4
+vcShouldKeepItemLegacyProdMachine: false
+aclrelations: []
+aclowner:
+  id: ""
+  type: ""
+  name: ""
+name: Isolate Endpoint
+description: Isolate an endpoint and disable Entra ID user upon malware detection
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 96a8b444-cf66-457f-8d9c-e4cb6fc0eaa9
+    type: start
+    task:
+      id: 96a8b444-cf66-457f-8d9c-e4cb6fc0eaa9
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "1"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "1":
+    id: "1"
+    taskid: 0c5f30c9-bceb-4c8c-aee9-56d2b4e1c03e
+    type: regular
+    task:
+      id: 0c5f30c9-bceb-4c8c-aee9-56d2b4e1c03e
+      version: -1
+      name: setCaseAssignee
+      description: commands.local.cmd.set.case.assignee
+      script: Builtin|||setCaseAssignee
+      type: regular
+      iscommand: true
+      brand: Builtin
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "2"
+    scriptarguments:
+      assignee:
+        simple: 
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 220
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "2":
+    id: "2"
+    taskid: 264a9943-248d-47ea-88f0-72542099c90e
+    type: regular
+    task:
+      id: 264a9943-248d-47ea-88f0-72542099c90e
+      version: -1
+      name: core-get-issues
+      description: "Returns a list of issues and their metadata, which you can filter
+        by built-in arguments or use the custom_filter to input a JSON filter object.
+        \nMultiple filter arguments will be concatenated using the AND operator, while
+        arguments that support a comma-separated list of values will use an OR operator
+        between each value."
+      script: Cortex Core - Platform|||core-get-issues
+      type: regular
+      iscommand: true
+      brand: Cortex Core - Platform
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "3"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 405
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 2
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "3":
+    id: "3"
+    taskid: eaec4745-be6b-4035-83aa-636b1e09358e
+    type: title
+    task:
+      id: eaec4745-be6b-4035-83aa-636b1e09358e
+      version: -1
+      name: Start Response
+      type: title
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+      displayLabel: ${issue.agent_hostname}
+      requiresIntervention: true
+    nexttasks:
+      '#none#':
+      - "4"
+      - "5"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 590
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "4":
+    id: "4"
+    taskid: 8962048b-46df-4dfc-bd5d-d3b4de6705e5
+    type: regular
+    task:
+      id: 8962048b-46df-4dfc-bd5d-d3b4de6705e5
+      version: -1
+      name: msgraph-api-request
+      description: Run a Microsoft Graph API query.
+      script: Microsoft Graph API|||msgraph-api-request
+      type: regular
+      iscommand: true
+      brand: Microsoft Graph API
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "6"
+    scriptarguments:
+      api_version:
+        simple: v1.0
+      http_method:
+        simple: PATCH
+      request_body:
+        simple: '{"accountEnabled": false}'
+      resource:
+        simple: /users/userid
+      using:
+        simple: Microsoft Graph API_instance_1
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 760
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 2
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "5":
+    id: "5"
+    taskid: 73a56095-243d-4bb6-a31c-f79203d0826c
+    type: regular
+    task:
+      id: 73a56095-243d-4bb6-a31c-f79203d0826c
+      version: -1
+      name: core-isolate-endpoint
+      description: Isolates the specified endpoint.
+      script: Cortex Core - IR|||core-isolate-endpoint
+      type: regular
+      iscommand: true
+      brand: Cortex Core - IR
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    nexttasks:
+      '#none#':
+      - "6"
+    scriptarguments:
+      endpoint_id:
+        simple: ${issue.xdmsourceagentidentifier}
+      using:
+        simple: Cortex Core - IR_default_instance
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 480,
+          "y": 760
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "6":
+    id: "6"
+    taskid: ef968762-16f1-40a5-8d3e-08649b045646
+    type: title
+    task:
+      id: ef968762-16f1-40a5-8d3e-08649b045646
+      version: -1
+      name: Undo
+      type: title
+      iscommand: false
+      brand: ""
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+      requiresIntervention: true
+    nexttasks:
+      '#none#':
+      - "7"
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 970
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+  "7":
+    id: "7"
+    taskid: 3e214b44-98ea-4144-baf4-7a3b785d867f
+    type: regular
+    task:
+      id: 3e214b44-98ea-4144-baf4-7a3b785d867f
+      version: -1
+      name: core-unisolate-endpoint
+      description: Reverses the isolation of an endpoint.
+      script: Cortex Core - IR|||core-unisolate-endpoint
+      type: regular
+      iscommand: true
+      brand: Cortex Core - IR
+      playbooktaskmissingcomponent: null
+      istaskmissingcomponenterrordismissed: false
+    scriptarguments:
+      endpoint_id:
+        simple: ${Core.Isolation.endpoint_id}
+      using:
+        simple: Cortex Core - IR_default_instance
+    separatecontext: false
+    continueonerrortype: ""
+    view: |-
+      {
+        "position": {
+          "x": 265,
+          "y": 1178.75
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+    isoversize: false
+    isautoswitchedtoquietmode: false
+outlinetasks: {}
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 1203.75,
+        "width": 810,
+        "x": 50,
+        "y": 50
+      }
+    }
+  }
+inputs: []
+outputs: []
+quiet: true
+adopted: true
+possibleresponses: []

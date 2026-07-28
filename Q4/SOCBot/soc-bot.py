@@ -20,6 +20,20 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("soc_bot")
 
 
+SEVERITY_LABELS = {
+    "0": "Unknown",
+    "0.5": "Informational",
+    "1": "Low",
+    "2": "Medium",
+    "3": "High",
+    "4": "Critical",
+}
+
+
+def _normalize_severity(raw: str) -> str:
+    return SEVERITY_LABELS.get(raw.strip(), raw)
+
+
 def _mask_secret(s: str) -> str:
     if not s:
         return "<missing>"
@@ -59,7 +73,7 @@ class SOCBot(discord.Client):
 
             alert_id = data.get("alert_id") or data.get("id") or "unknown"
             description = data.get("description") or data.get("message") or "No description provided."
-            severity = str(data.get("severity", "Unknown")).strip() or "Unknown"
+            severity = _normalize_severity(str(data.get("severity", "Unknown")).strip() or "Unknown")
             title = data.get("title") or f"New Alert: {alert_id}"
 
             try:
@@ -79,9 +93,9 @@ class SOCBot(discord.Client):
                     else discord.Color.dark_gray()
                 ),
             )
-            embed.add_field(name="Alert ID", value=str(alert_id), inline=True)
             embed.add_field(name="Severity", value=severity, inline=True)
-            embed.add_field(name="Description", value=description, inline=False)
+            embed.add_field(name="Alert ID", value=f"`{alert_id}`", inline=False)
+            embed.timestamp = discord.utils.utcnow()
             embed.set_footer(text="Resolve this alert by typing: /resolve <alert_id>")
 
             await channel.send(embed=embed)
